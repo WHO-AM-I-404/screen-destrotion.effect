@@ -12,21 +12,25 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Install MinGW
-      run: |
-        choco install mingw -y
-        
-    - name: Set PATH for MinGW
-      run: |
-        echo "C:\ProgramData\chocolatey\lib\mingw\tools\install\mingw64\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+    - name: Setup MSYS2
+      uses: msys2/setup-msys2@v2
+      with:
+        update: true
+        install: mingw-w64-x86_64-gcc
 
     - name: Build distortion.exe
+      shell: msys2 {0}
       run: |
-        gcc -O3 -o destortion.exe destortion.c -lgdi32 -lm
+        gcc -O3 -o distortion.exe distortion.c -lgdi32 -lm
+
+    - name: Verify executable
+      run: |
+        dir
+        if exist distortion.exe (echo "Build success!" && exit 0) else (echo "Build failed!" && exit 1)
 
     - name: Create Release Artifact
       run: |
-        7z a DistortionEffect-v1.0-windows.zip destortion.exe
+        7z a DistortionEffect-v1.0-windows.zip distortion.exe
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
