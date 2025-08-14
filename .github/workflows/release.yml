@@ -1,0 +1,32 @@
+name: Build Release
+
+on:
+  push:
+    tags:
+      - 'v1.0'
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up MinGW
+      uses: egor-tensin/setup-mingw@v3
+      with:
+        platform: x64
+
+    - name: Build distortion.exe
+      run: |
+        gcc -O3 -o distortion.exe distortion.c -lgdi32 -lm
+
+    - name: Create Release Artifact
+      run: |
+        7z a DistortionEffect-v1.0-windows.zip distortion.exe
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: DistortionEffect-v1.0
+        path: DistortionEffect-v1.0-windows.zip
