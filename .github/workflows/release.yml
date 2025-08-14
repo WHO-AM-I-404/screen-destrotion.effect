@@ -25,8 +25,13 @@ jobs:
 
     - name: Verify executable
       run: |
-        dir
-        if exist distortion.exe (echo "Build success!" && exit 0) else (echo "Build failed!" && exit 1)
+        Get-ChildItem
+        if (Test-Path -Path distortion.exe) {
+            echo "Build success!"
+        } else {
+            echo "Build failed!"
+            exit 1
+        }
 
     - name: Create Release Artifact
       run: |
