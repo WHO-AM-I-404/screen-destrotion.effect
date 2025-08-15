@@ -1,9 +1,9 @@
-name: Build and Release
+name: Build and Release Glitch
 
 on:
   push:
     tags:
-      - 'v1.0'
+      - 'v*.*' # contoh: v1.0, v2.5
 
 jobs:
   build-windows:
@@ -12,32 +12,34 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Install GCC (via Chocolatey)
+    - name: Install MinGW (via Chocolatey)
       run: |
         choco install mingw --version=13.2.0 --yes
         echo "C:\ProgramData\chocolatey\lib\mingw\tools\install\mingw64\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
 
-    - name: Build executable
+    - name: Build glitch.exe
       run: |
-        gcc -O3 -o distortion.exe distortion.c -lgdi32 -lm
+        g++ -O2 -static -o glitch.exe glitch.cpp -lgdi32
 
     - name: Verify build
       run: |
-        if (Test-Path distortion.exe) {
+        if (Test-Path glitch.exe) {
             echo "Build successful!"
-            dir distortion.exe
+            dir glitch.exe
         } else {
             echo "Build failed!"
             Get-ChildItem
             exit 1
         }
 
-    - name: Create release
+    - name: Create GitHub Release
       uses: softprops/action-gh-release@v2
       with:
         tag_name: ${{ github.ref_name }}
-        name: Distortion Effect Release
-        body: Automatic release for distortion effect application
-        files: distortion.exe
+        name: Glitch Effect Release
+        body: |
+          Automatic build for Glitch desktop effect.
+          Press ESC to exit the effect.
+        files: glitch.exe
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
