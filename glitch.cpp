@@ -78,7 +78,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         SetTimer(hwnd, 1, REFRESH_RATE, NULL);
         return 0;
         
-    case WM_TIMER:
+    case WM_TIMER: {
         CaptureScreen(hwnd);
         ApplyGlitchEffect();
         
@@ -92,6 +92,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         
         ReleaseDC(NULL, hdcScreen);
         return 0;
+    }
         
     case WM_KEYDOWN:
         if (wParam == VK_ESCAPE) DestroyWindow(hwnd);
@@ -113,12 +114,12 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE, LPSTR, int) {
     // Register window class
     WNDCLASSEX wc = { sizeof(WNDCLASSEX), CS_HREDRAW | CS_VREDRAW, WndProc,
                       0, 0, hInst, NULL, NULL, NULL, NULL,
-                      L"GlitchWindowClass", NULL };
+                      "GlitchWindowClass", NULL };
     RegisterClassEx(&wc);
     
     // Create layered window
     HWND hwnd = CreateWindowEx(WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_TOPMOST,
-        wc.lpszClassName, L"Desktop Glitch",
+        wc.lpszClassName, "Desktop Glitch",
         WS_POPUP, 0, 0, GetSystemMetrics(SM_CXSCREEN), 
         GetSystemMetrics(SM_CYSCREEN), NULL, NULL, hInst, NULL);
     
