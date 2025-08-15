@@ -12,10 +12,16 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Install MinGW (via Chocolatey)
+    - name: Install MinGW
       run: |
-        choco install mingw --version=13.2.0 --yes
-        echo "C:\ProgramData\chocolatey\lib\mingw\tools\install\mingw64\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
+        # Unduh MinGW secara langsung (lebih cepat dan stabil)
+        $url = "https://github.com/brechtsanders/winlibs_mingw/releases/download/13.2.0-16.0.6-11.0.1-msvcrt-r5/winlibs-x86_64-posix-seh-gcc-13.2.0-llvm-16.0.6-mingw-w64msvcrt-11.0.1-r5.zip"
+        Invoke-WebRequest -Uri $url -OutFile mingw.zip
+        Expand-Archive -Path mingw.zip -DestinationPath mingw
+        
+        # Tambahkan ke PATH
+        $mingwPath = Resolve-Path "mingw/mingw64/bin"
+        echo "$mingwPath" | Out-File -FilePath $env:GITHUB_PATH -Append
 
     - name: Build glitch.exe
       run: |
@@ -25,7 +31,7 @@ jobs:
       run: |
         if (Test-Path glitch.exe) {
             echo "Build successful!"
-            dir glitch.exe
+            echo "File size: $((Get-Item glitch.exe).Length) bytes"
         } else {
             echo "Build failed!"
             Get-ChildItem
@@ -36,10 +42,11 @@ jobs:
       uses: softprops/action-gh-release@v2
       with:
         tag_name: ${{ github.ref_name }}
-        name: Glitch Effect Release
+        name: Glitch Effect ${{ github.ref_name }}
         body: |
-          Automatic build for Glitch desktop effect.
-          Press ESC to exit the effect.
+          Desktop glitch effect application
+          - Press ESC to exit
+          - Built automatically from GitHub Actions
         files: glitch.exe
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
