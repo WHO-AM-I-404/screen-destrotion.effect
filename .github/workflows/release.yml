@@ -12,22 +12,23 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
-      
+
     - name: Install MinGW and dependencies
       run: |
         choco install mingw -y --force --version=13.2.0
         echo "C:\ProgramData\chocolatey\lib\mingw\tools\install\mingw64\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
 
     - name: Build glitch1.exe
+      shell: bash
       run: |
         cd glitch
         g++ --version
-        g++ -O3 -static -o glitch1.exe glitch1.cpp -lgdi32 -luser32 -lwinmm -lpthread -mwindows -Wl,--subsystem=windows
-        
+        g++ -O2 -Wall -Wextra -static -o glitch1.exe glitch1.cpp -lgdi32 -luser32 -lwinmm -lpthread -mwindows
+
     - name: Move executable to root
-      run: |
-        mv glitch/glitch1.exe glitch1.exe
-        
+      shell: bash
+      run: mv glitch/glitch1.exe glitch1.exe
+
     - name: Verify build
       run: |
         if (Test-Path glitch1.exe) {
