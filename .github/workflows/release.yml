@@ -1,4 +1,4 @@
-name: Build and Release Radial1 Glitch
+name: Build and Release Glitch1
 
 on:
   push:
@@ -18,21 +18,21 @@ jobs:
         choco install mingw -y --force --version=13.2.0
         echo "C:\ProgramData\chocolatey\lib\mingw\tools\install\mingw64\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
 
-    - name: Build radial1.exe
+    - name: Build glitch1.exe
       run: |
         cd glitch
         g++ --version
-        g++ -O3 -static -o radial1.exe glitch1.cpp -lgdi32 -luser32 -lwinmm -lpthread -mwindows
+        g++ -O3 -static -o glitch1.exe glitch1.cpp -lgdi32 -luser32 -lwinmm -lpthread -mwindows
         
     - name: Move executable to root
       run: |
-        mv glitch/radial1.exe radial1.exe
+        mv glitch/glitch1.exe glitch1.exe
         
     - name: Verify build
       run: |
-        if (Test-Path radial1.exe) {
+        if (Test-Path glitch1.exe) {
             echo "Build successful!"
-            echo "File size: $((Get-Item radial1.exe).Length) bytes"
+            echo "File size: $((Get-Item glitch1.exe).Length) bytes"
         } else {
             echo "::error::Build failed!"
             Get-ChildItem
@@ -43,14 +43,14 @@ jobs:
       uses: softprops/action-gh-release@v2
       with:
         tag_name: ${{ github.ref_name }}
-        name: Radial1 Glitch ${{ github.ref_name }}
+        name: Glitch1 ${{ github.ref_name }}
         body: |
-          RADIAL1 GLITCH SIMULATION
+          GLITCH1 SIMULATION
           - Press ESC to exit
           - Effects intensify automatically over time
           - Includes particle effects, screen shake, and cursor distortion
           - No permanent system changes
           - Built automatically from GitHub Actions
-        files: radial1.exe
+        files: glitch1.exe
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
