@@ -5,7 +5,7 @@
 #include <mmsystem.h>
 #include <thread>
 #include <vector>
-#include <algorithm>
+#include <algorithm> // Ditambahkan untuk std::min
 
 #pragma comment(lib, "winmm.lib")
 
@@ -223,7 +223,7 @@ void ApplyGlitchEffect() {
     
     // Tingkatkan intensitas seiring waktu
     DWORD currentTime = GetTickCount();
-    intensityLevel = min(10, 1 + (currentTime - startTime) / 10000); // Meningkat setiap 10 detik
+    intensityLevel = std::min(10, 1 + (currentTime - startTime) / 10000); // Diperbaiki: std::min
     
     // Terapkan efek guncangan layar
     ApplyScreenShake();
