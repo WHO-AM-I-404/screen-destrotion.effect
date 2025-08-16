@@ -21,13 +21,8 @@ jobs:
     - name: Build distortion.exe
       shell: bash
       run: |
-        cd distortion
         g++ --version
         g++ -O2 -Wall -Wextra -static -o distortion.exe distortion.cpp -lgdi32 -luser32 -lwinmm -ldwmapi -lpthread -mwindows
-
-    - name: Move executable to root
-      shell: bash
-      run: mv distortion/distortion.exe distortion.exe
 
     - name: Verify build
       run: |
