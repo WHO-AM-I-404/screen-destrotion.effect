@@ -5,7 +5,7 @@
 #include <mmsystem.h>
 #include <thread>
 #include <vector>
-#include <algorithm> // Ditambahkan untuk std::min
+#include <algorithm>
 
 #pragma comment(lib, "winmm.lib")
 
@@ -223,7 +223,9 @@ void ApplyGlitchEffect() {
     
     // Tingkatkan intensitas seiring waktu
     DWORD currentTime = GetTickCount();
-    intensityLevel = std::min(10, 1 + (currentTime - startTime) / 10000); // Diperbaiki: std::min
+    // Perbaikan: Konversi ke int untuk menghindari masalah tipe data
+    int timeIntensity = 1 + static_cast<int>((currentTime - startTime) / 10000);
+    intensityLevel = std::min(10, timeIntensity);
     
     // Terapkan efek guncangan layar
     ApplyScreenShake();
@@ -357,9 +359,14 @@ void ApplyGlitchEffect() {
                 for (int x = 0; x < screenWidth; x++) {
                     int pos = ((y + h) * screenWidth + x) * 4;
                     if (pos < screenWidth * screenHeight * 4 - 4) {
-                        pPixels[pos] = min(pPixels[pos] + 100, 255);
-                        pPixels[pos + 1] = min(pPixels[pos + 1] + 100, 255);
-                        pPixels[pos + 2] = min(pPixels[pos + 2] + 100, 255);
+                        // Perbaikan: Gunakan clamp sederhana untuk menghindari overflow
+                        int newB = static_cast<int>(pPixels[pos]) + 100;
+                        int newG = static_cast<int>(pPixels[pos + 1]) + 100;
+                        int newR = static_cast<int>(pPixels[pos + 2]) + 100;
+                        
+                        pPixels[pos] = (newB > 255) ? 255 : static_cast<BYTE>(newB);
+                        pPixels[pos + 1] = (newG > 255) ? 255 : static_cast<BYTE>(newG);
+                        pPixels[pos + 2] = (newR > 255) ? 255 : static_cast<BYTE>(newR);
                     }
                 }
             }
