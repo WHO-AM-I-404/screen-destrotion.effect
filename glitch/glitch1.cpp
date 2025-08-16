@@ -89,7 +89,7 @@ void PlayGlitchSoundAsync() {
     }).detach();
 }
 
-void CaptureScreen(HWND hwnd) {
+void CaptureScreen(HWND) {  // Parameter tidak digunakan
     HDC hdcScreen = GetDC(NULL);
     HDC hdcMem = CreateCompatibleDC(hdcScreen);
     
@@ -142,15 +142,15 @@ void ApplyCursorEffect() {
     if (!cursorVisible || !pPixels) return;
     
     // Gambar efek distorsi di sekitar kursor
-    int cursorSize = min(30 * intensityLevel, 300);
-    int startX = max(cursorX - cursorSize, 0);
-    int startY = max(cursorY - cursorSize, 0);
-    int endX = min(cursorX + cursorSize, screenWidth - 1);
-    int endY = min(cursorY + cursorSize, screenHeight - 1);
+    int cursorSize = std::min(30 * intensityLevel, 300);
+    int startX = std::max(cursorX - cursorSize, 0);
+    int startY = std::max(cursorY - cursorSize, 0);
+    int endX = std::min(cursorX + cursorSize, screenWidth - 1);
+    int endY = std::min(cursorY + cursorSize, screenHeight - 1);
     
     for (int y = startY; y <= endY; y++) {
         for (int x = startX; x <= endX; x++) {
-            float dist = sqrt(pow(x - cursorX, 2) + pow(y - cursorY, 2));
+            float dist = sqrt(static_cast<float>((x - cursorX)*(x - cursorX) + (y - cursorY)*(y - cursorY));
             if (dist < cursorSize) {
                 int pos = (y * screenWidth + x) * 4;
                 if (pos >= 0 && pos < screenWidth * screenHeight * 4 - 4) {
@@ -230,7 +230,6 @@ void ApplyGlitchEffect() {
     
     // Tingkatkan intensitas seiring waktu
     DWORD currentTime = GetTickCount();
-    // Perbaikan: Konversi ke int untuk menghindari masalah tipe data
     int timeIntensity = 1 + static_cast<int>((currentTime - startTime) / 10000);
     intensityLevel = std::min(10, timeIntensity);
     
@@ -244,7 +243,7 @@ void ApplyGlitchEffect() {
         int xOffset = (rand() % (MAX_GLITCH_INTENSITY * 2 * intensityLevel)) - MAX_GLITCH_INTENSITY * intensityLevel;
         
         // Batasi height agar tidak melebihi batas layar
-        height = min(height, screenHeight - y);
+        height = std::min(height, screenHeight - y);
         if (height <= 0) continue;
         
         for (int h = 0; h < height; ++h) {
@@ -294,8 +293,8 @@ void ApplyGlitchEffect() {
     
     // Distorsi blok ekstrim
     for (int i = 0; i < MAX_GLITCH_BLOCKS * intensityLevel; ++i) {
-        int blockWidth = min(50 + rand() % (200 * intensityLevel), screenWidth);
-        int blockHeight = min(50 + rand() % (200 * intensityLevel), screenHeight);
+        int blockWidth = std::min(50 + rand() % (200 * intensityLevel), screenWidth);
+        int blockHeight = std::min(50 + rand() % (200 * intensityLevel), screenHeight);
         int x = rand() % (screenWidth - blockWidth);
         int y = rand() % (screenHeight - blockHeight);
         int offsetX = (rand() % (300 * intensityLevel)) - 150 * intensityLevel;
@@ -329,7 +328,7 @@ void ApplyGlitchEffect() {
     }
     
     // Shift warna acak
-    if (rand() % (5 / intensityLevel) == 0) {
+    if (intensityLevel > 0 && (rand() % std::max(1, 5 / intensityLevel)) == 0) {
         ApplyColorShift(pPixels, (rand() % 3) + 1);
     }
     
@@ -347,16 +346,21 @@ void ApplyGlitchEffect() {
     }
     
     // Efek distorsi radial
-    if (rand() % (6 / intensityLevel) == 0) {
+    if (intensityLevel > 0 && (rand() % std::max(1, 6 / intensityLevel)) == 0) {
         int centerX = rand() % screenWidth;
         int centerY = rand() % screenHeight;
-        int radius = min(100 + rand() % (500 * intensityLevel), screenWidth/2);
+        int radius = std::min(100 + rand() % (500 * intensityLevel), screenWidth/2);
         int distortion = 20 + rand() % (80 * intensityLevel);
         
-        for (int y = max(centerY - radius, 0); y < min(centerY + radius, screenHeight); y++) {
-            for (int x = max(centerX - radius, 0); x < min(centerX + radius, screenWidth); x++) {
-                float dx = x - centerX;
-                float dy = y - centerY;
+        int yStart = std::max(centerY - radius, 0);
+        int yEnd = std::min(centerY + radius, screenHeight);
+        int xStart = std::max(centerX - radius, 0);
+        int xEnd = std::min(centerX + radius, screenWidth);
+        
+        for (int y = yStart; y < yEnd; y++) {
+            for (int x = xStart; x < xEnd; x++) {
+                float dx = static_cast<float>(x - centerX);
+                float dy = static_cast<float>(y - centerY);
                 float distance = sqrt(dx*dx + dy*dy);
                 
                 if (distance < radius) {
@@ -392,10 +396,10 @@ void ApplyGlitchEffect() {
                 for (int x = 0; x < screenWidth; x++) {
                     int pos = ((y + h) * screenWidth + x) * 4;
                     if (pos >= 0 && pos < screenWidth * screenHeight * 4 - 4) {
-                        // Perbaikan: Gunakan clamp sederhana untuk menghindari overflow
-                        pPixels[pos] = min(pPixels[pos] + 100, 255);
-                        pPixels[pos + 1] = min(pPixels[pos + 1] + 100, 255);
-                        pPixels[pos + 2] = min(pPixels[pos + 2] + 100, 255);
+                        // Gunakan clamp sederhana
+                        pPixels[pos] = (pPixels[pos] + 100 > 255) ? 255 : pPixels[pos] + 100;
+                        pPixels[pos + 1] = (pPixels[pos + 1] + 100 > 255) ? 255 : pPixels[pos + 1] + 100;
+                        pPixels[pos + 2] = (pPixels[pos + 2] + 100 > 255) ? 255 : pPixels[pos + 2] + 100;
                     }
                 }
             }
@@ -403,7 +407,7 @@ void ApplyGlitchEffect() {
     }
     
     // Efek inversi warna acak
-    if (rand() % (20 / intensityLevel) == 0) {
+    if (intensityLevel > 0 && (rand() % std::max(1, 20 / intensityLevel)) == 0) {
         for (int i = 0; i < screenWidth * screenHeight * 4; i += 4) {
             if (i < screenWidth * screenHeight * 4 - 4) {
                 pPixels[i] = 255 - pPixels[i];
@@ -449,7 +453,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         
         if (hdcLayered && hGlitchBitmap) {
             HDC hdcScreen = GetDC(NULL);
-            POINT ptZero = { 0 };
+            POINT ptZero = { 0, 0 };  // Diperbaiki inisialisasi
             SIZE size = { screenWidth, screenHeight };
             
             SelectObject(hdcLayered, hGlitchBitmap);
