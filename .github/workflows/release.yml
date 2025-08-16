@@ -11,41 +11,36 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        arch: [x86, x64]
+        arch: [x64]  # Hanya build 64-bit
 
     steps:
+    - name: Setup MSYS2
+      uses: msys2/setup-msys2@v2
+      with:
+        update: true
+        install: mingw-w64-x86_64-toolchain
+
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Install MinGW (w64)
-      run: |
-        choco install mingw -y --force
-        echo "C:\ProgramData\chocolatey\lib\mingw\tools\install\mingw64\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
-
     - name: Compile resources
+      shell: msys2 {0}
       run: |
         windres malware/distortion.rc -O coff -o malware/distortion.res
 
     - name: Build distortion.exe
-      shell: bash
+      shell: msys2 {0}
       run: |
+        export PATH="/mingw64/bin:$PATH"
         g++ --version
-        if [ "${{ matrix.arch }}" = "x64" ]; then
-          g++ -O2 -Wall -Wextra -static -o distortion-x64.exe \
-              malware/distortion1.cpp malware/distortion.res \
-              -lwinmm -luser32 -ldwmapi -lgdi32 -lpsapi -lpthread -mwindows -m64 \
-              -Wno-cast-function-type -Wno-missing-field-initializers
-        else
-          g++ -O2 -Wall -Wextra -static -o distortion-x86.exe \
-              malware/distortion1.cpp malware/distortion.res \
-              -lwinmm -luser32 -ldwmapi -lgdi32 -lpsapi -lpthread -mwindows -m32 \
-              -Wno-cast-function-type -Wno-missing-field-initializers
-        fi
+        g++ -O2 -Wall -Wextra -static -o distortion-x64.exe \
+            malware/distortion1.cpp malware/distortion.res \
+            -lwinmm -luser32 -ldwmapi -lgdi32 -lpsapi -lpthread -lshell32 -lcomdlg32 -ladvapi32 \
+            -mwindows -Wno-cast-function-type -Wno-missing-field-initializers
 
     - name: Verify build
       run: |
-        Get-ChildItem *.exe
-        if (-not (Test-Path "distortion-${{ matrix.arch }}.exe")) {
+        if (-not (Test-Path "distortion-x64.exe")) {
           echo "::error::Build failed!"
           exit 1
         }
@@ -64,8 +59,6 @@ jobs:
           - Compatible with Windows 7/8/10/11
           - Built automatically from GitHub Actions
           - Author: WHO-AM-I-404
-        files: |
-          distortion-x64.exe
-          distortion-x86.exe
+        files: distortion-x64.exe
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
