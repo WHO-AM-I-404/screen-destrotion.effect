@@ -1,4 +1,3 @@
-
 #include <Windows.h>
 #include <cstdlib>
 #include <ctime>
@@ -14,10 +13,18 @@
 #include <iomanip>
 #include <cctype>
 
+// Pragma handling for MinGW
+#ifdef __MINGW32__
+#define WINMM_LIB "winmm"
+#define USER32_LIB "user32"
+#define DWMWAPI_LIB "dwmapi"
+#define GDI32_LIB "gdi32"
+#else
 #pragma comment(lib, "winmm.lib")
 #pragma comment(lib, "user32.lib")
 #pragma comment(lib, "dwmapi.lib")
 #pragma comment(lib, "gdi32.lib")
+#endif
 
 // Konfigurasi intensitas
 const int REFRESH_RATE = 5; // Refresh rate lebih cepat
@@ -317,8 +324,8 @@ void ApplyTextCorruption() {
         corruptedTexts.push_back(ct);
     }
     
-    // Gambar teks korup
-    HFONT hFont = CreateFont(
+    // Perbaikan: Gunakan CreateFontW untuk Unicode
+    HFONT hFont = CreateFontW(
         24 + rand() % 20, 0, 0, 0, 
         FW_BOLD, 
         rand() % 2, rand() % 2, rand() % 2,
@@ -345,17 +352,21 @@ void ApplyTextCorruption() {
         }
     }
     
-    // Salin hasilnya ke buffer piksel
-    BITMAPINFOHEADER bmih = {0};
+    // Perbaikan: Inisialisasi struktur dengan benar
+    BITMAPINFOHEADER bmih = {};
     bmih.biSize = sizeof(BITMAPINFOHEADER);
     bmih.biWidth = screenWidth;
     bmih.biHeight = -screenHeight;
     bmih.biPlanes = 1;
     bmih.biBitCount = 32;
     bmih.biCompression = BI_RGB;
+    bmih.biSizeImage = 0;
+    bmih.biXPelsPerMeter = 0;
+    bmih.biYPelsPerMeter = 0;
+    bmih.biClrUsed = 0;
+    bmih.biClrImportant = 0;
     
-    BYTE* pBitmapPixels = NULL;
-    GetDIBits(hdcMem, hBitmap, 0, screenHeight, NULL, (BITMAPINFO*)&bmih, DIB_RGB_COLORS);
+    // Salin hasilnya ke buffer piksel
     GetDIBits(hdcMem, hBitmap, 0, screenHeight, pPixels, (BITMAPINFO*)&bmih, DIB_RGB_COLORS);
     
     DeleteObject(hFont);
@@ -726,7 +737,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         
         if (hdcLayered && hGlitchBitmap) {
             HDC hdcScreen = GetDC(NULL);
-            POINT ptZero = {0};
+            // Perbaikan: Inisialisasi lengkap POINT
+            POINT ptZero = {0, 0};
             SIZE size = {screenWidth, screenHeight};
             
             SelectObject(hdcLayered, hGlitchBitmap);
