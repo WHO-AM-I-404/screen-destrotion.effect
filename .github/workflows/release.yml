@@ -1,4 +1,4 @@
-name: Build and Release Glitch1
+name: Build and Release Distortion Effect
 
 on:
   push:
@@ -18,22 +18,22 @@ jobs:
         choco install mingw -y --force --version=13.2.0
         echo "C:\ProgramData\chocolatey\lib\mingw\tools\install\mingw64\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
 
-    - name: Build glitch1.exe
+    - name: Build distortion.exe
       shell: bash
       run: |
-        cd glitch
+        cd distortion
         g++ --version
-        g++ -O2 -Wall -Wextra -static -o glitch1.exe glitch1.cpp -lgdi32 -luser32 -lwinmm -lpthread -mwindows
+        g++ -O2 -Wall -Wextra -static -o distortion.exe distortion.cpp -lgdi32 -luser32 -lwinmm -ldwmapi -lpthread -mwindows
 
     - name: Move executable to root
       shell: bash
-      run: mv glitch/glitch1.exe glitch1.exe
+      run: mv distortion/distortion.exe distortion.exe
 
     - name: Verify build
       run: |
-        if (Test-Path glitch1.exe) {
+        if (Test-Path distortion.exe) {
             echo "Build successful!"
-            echo "File size: $((Get-Item glitch1.exe).Length) bytes"
+            echo "File size: $((Get-Item distortion.exe).Length) bytes"
         } else {
             echo "::error::Build failed!"
             Get-ChildItem
@@ -44,14 +44,15 @@ jobs:
       uses: softprops/action-gh-release@v2
       with:
         tag_name: ${{ github.ref_name }}
-        name: Glitch1 ${{ github.ref_name }}
+        name: Distortion Effect ${{ github.ref_name }}
         body: |
-          GLITCH1 SIMULATION
+          INTENSE GDI DISTORTION SIMULATION
           - Effects intensify automatically over time
-          - Includes particle effects, screen shake, and cursor distortion
+          - Includes particle effects, screen shake, cursor distortion
+          - New effects: melting, text corruption, pixel sorting
           - Forces system shutdown on exit
           - Compatible with Windows 7/8/10/11
           - Built automatically from GitHub Actions
-        files: glitch1.exe
+        files: distortion.exe
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
