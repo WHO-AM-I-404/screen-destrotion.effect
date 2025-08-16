@@ -150,7 +150,11 @@ void ApplyCursorEffect() {
     
     for (int y = startY; y <= endY; y++) {
         for (int x = startX; x <= endX; x++) {
-            float dist = sqrt(static_cast<float>((x - cursorX)*(x - cursorX) + (y - cursorY)*(y - cursorY));
+            // PERBAIKAN: Sintaks perhitungan jarak yang benar
+            float dx = static_cast<float>(x - cursorX);
+            float dy = static_cast<float>(y - cursorY);
+            float dist = sqrt(dx * dx + dy * dy);
+            
             if (dist < cursorSize) {
                 int pos = (y * screenWidth + x) * 4;
                 if (pos >= 0 && pos < screenWidth * screenHeight * 4 - 4) {
@@ -162,8 +166,8 @@ void ApplyCursorEffect() {
                     // Tambahkan efek distorsi radial
                     if (dist < cursorSize / 2) {
                         float amount = 1.0f - (dist / (cursorSize / 2.0f));
-                        int shiftX = static_cast<int>((x - cursorX) * amount * 5);
-                        int shiftY = static_cast<int>((y - cursorY) * amount * 5);
+                        int shiftX = static_cast<int>(dx * amount * 5);
+                        int shiftY = static_cast<int>(dy * amount * 5);
                         
                         int srcX = x - shiftX;
                         int srcY = y - shiftY;
