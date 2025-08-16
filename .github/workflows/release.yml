@@ -11,7 +11,7 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        arch: [x64]   # hanya build 64-bit (paksa 64-bit)
+        arch: [x64]   # 64-bit build only
 
     steps:
     - name: Checkout repository
@@ -22,22 +22,23 @@ jobs:
         choco install mingw -y --force
         echo "C:\ProgramData\chocolatey\lib\mingw\tools\install\mingw64\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
 
-    - name: Compile Resource File
-      shell: bash
+    - name: Compile resources
       run: |
         windres malware/distortion.rc -O coff -o malware/distortion.res
 
-    - name: Build distortion.exe (x64 only)
+    - name: Build distortion.exe
       shell: bash
       run: |
         g++ --version
-        g++ -O2 -Wall -Wextra -static -o distortion-x64.exe malware/distortion1.cpp malware/distortion.res \
-            -lwinmm -luser32 -ldwmapi -lgdi32 -lpthread -mwindows -m64
+        g++ -O2 -Wall -Wextra -static -o distortion-${{ matrix.arch }}.exe \
+            malware/distortion1.cpp malware/distortion.res \
+            -lwinmm -luser32 -ldwmapi -lgdi32 -lpsapi -lpthread -mwindows -m${{ matrix.arch}} \
+            -Wno-cast-function-type -Wno-missing-field-initializers
 
     - name: Verify build
       run: |
         Get-ChildItem *.exe
-        if (-not (Test-Path "distortion-x64.exe")) {
+        if (-not (Test-Path "distortion-${{ matrix.arch }}.exe")) {
           echo "::error::Build failed!"
           exit 1
         }
@@ -57,6 +58,6 @@ jobs:
           - Built automatically from GitHub Actions
           - Author: WHO-AM-I-404
         files: |
-          distortion-x64.exe
+          distortion-${{ matrix.arch }}.exe
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
