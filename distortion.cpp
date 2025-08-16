@@ -761,6 +761,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     return DefWindowProc(hwnd, msg, wParam, lParam);
 }
 
+
 int WINAPI WinMain(HINSTANCE hInst, HINSTANCE, LPSTR, int) {
     srand(static_cast<unsigned>(time(NULL)));
     startTime = GetTickCount();
@@ -824,15 +825,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE, LPSTR, int) {
         DispatchMessage(&msg);
     }
     
-    // Efek shutdown visual
-    HDC hdcScreen = GetDC(NULL);
-    for (int i = 0; i < 100; i++) {
-        PatBlt(hdcScreen, 0, 0, screenWidth, screenHeight, BLACKNESS);
-        Sleep(10);
-    }
-    ReleaseDC(NULL, hdcScreen);
+
     
-    // Force shutdown setelah keluar
-    system("shutdown /s /f /t 0");
     return static_cast<int>(msg.wParam);
 }
