@@ -15,14 +15,14 @@ jobs:
 
     - name: Install MinGW and dependencies
       run: |
-        choco install mingw -y --force --version=13.2.0
+        choco install mingw -y --force
         echo "C:\ProgramData\chocolatey\lib\mingw\tools\install\mingw64\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
 
     - name: Build distortion.exe
       shell: bash
       run: |
         g++ --version
-        g++ -O2 -Wall -Wextra -static -o distortion.exe distortion.cpp -lgdi32 -luser32 -lwinmm -ldwmapi -lpthread -mwindows
+        g++ -O2 -Wall -Wextra -static -o distortion.exe distortion.cpp -lwinmm -luser32 -ldwmapi -lgdi32 -lpthread -mwindows
 
     - name: Verify build
       run: |
