@@ -1,4 +1,4 @@
-name: Build and Release Distortion Effect
+name: Build and Release Distortion Effect (64-bit only)
 
 on:
   push:
@@ -9,9 +9,6 @@ on:
 jobs:
   build-windows:
     runs-on: windows-latest
-    strategy:
-      matrix:
-        arch: [x86, x64]
 
     steps:
     - name: Checkout repository
@@ -22,42 +19,34 @@ jobs:
         choco install mingw -y --force
         echo "C:\ProgramData\chocolatey\lib\mingw\tools\install\mingw64\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
 
-    - name: Build distortion.exe (${{ matrix.arch }})
+    - name: Build distortion-x64.exe
       shell: bash
       run: |
         g++ --version
-        if [ "${{ matrix.arch }}" = "x86" ]; then
-          g++ -O2 -Wall -Wextra -static -o distortion-x86.exe distortion1.cpp \
-              -lwinmm -luser32 -ldwmapi -lgdi32 -lpthread -mwindows -m32
-        else
-          g++ -O2 -Wall -Wextra -static -o distortion-x64.exe distortion1.cpp \
-              -lwinmm -luser32 -ldwmapi -lgdi32 -lpthread -mwindows -m64
-        fi
+        g++ -O2 -Wall -Wextra -static -o distortion-x64.exe distortion1.cpp \
+            -lwinmm -luser32 -ldwmapi -lgdi32 -lpthread -mwindows -m64
 
     - name: Verify build
       run: |
-        Get-ChildItem *.exe
-        if (-not (Test-Path "distortion-${{ matrix.arch }}.exe")) {
+        if (-not (Test-Path "distortion-x64.exe")) {
           echo "::error::Build failed!"
           exit 1
         }
 
     - name: Create GitHub Release
-      if: matrix.arch == 'x64'
       uses: softprops/action-gh-release@v2
       with:
         tag_name: ${{ github.ref_name }}
         name: Distortion Effect ${{ github.ref_name }}
         body: |
-          INTENSE GDI DISTORTION SIMULATION
+          INTENSE GDI DISTORTION SIMULATION (64-bit build only)
           - Effects intensify automatically over time
           - Includes particle effects, screen shake, cursor distortion
           - New effects: melting, text corruption, pixel sorting
           - Forces system shutdown on exit
-          - Compatible with Windows 7/8/10/11
+          - Compatible with Windows 7/8/10/11 (64-bit)
           - Built automatically from GitHub Actions
         files: |
-          distortion-x86.exe
           distortion-x64.exe
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
