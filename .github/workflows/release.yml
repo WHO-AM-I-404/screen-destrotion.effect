@@ -22,7 +22,7 @@ jobs:
       shell: bash
       run: |
         g++ --version
-        g++ -O2 -Wall -Wextra -static -o distortion.exe distortion.cpp -lwinmm -luser32 -ldwmapi -lgdi32 -lpthread -mwindows
+        g++ -O2 -Wall -Wextra -static -o distortion.exe distortion1.cpp -lwinmm -luser32 -ldwmapi -lgdi32 -lpthread -mwindows
 
     - name: Verify build
       run: |
