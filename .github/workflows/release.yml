@@ -20,7 +20,7 @@ jobs:
     - name: Build glitch.exe
       run: |
         g++ --version
-        g++ -O3 -static -o glitch.exe glitch.cpp -lgdi32 -luser32 -lwinmm -lpthread
+        g++ -O3 -static -o glitch.exe glitch/glitch.cpp -lgdi32 -luser32 -lwinmm -lpthread
 
     - name: Verify build
       run: |
@@ -29,7 +29,7 @@ jobs:
             echo "File size: $((Get-Item glitch.exe).Length) bytes"
         } else {
             echo "::error::Build failed!"
-            Get-ChildItem
+            Get-ChildItem -Recurse
             exit 1
         }
 
