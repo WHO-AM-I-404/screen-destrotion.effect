@@ -1,4 +1,4 @@
-name: Build and Release Glitch
+name: Build and Release Extreme Glitch
 
 on:
   push:
@@ -12,24 +12,15 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
       
-    - name: Find MinGW
+    - name: Install MinGW and dependencies
       run: |
-        # Cari lokasi g++ di sistem
-        $gppPath = (Get-Command g++ -ErrorAction SilentlyContinue).Path
-        if ($gppPath) {
-            $mingwBin = Split-Path -Path $gppPath -Parent
-            echo "Found MinGW at: $mingwBin"
-            echo "$mingwBin" | Out-File -FilePath $env:GITHUB_PATH -Append
-        } else {
-            echo "::error::MinGW not found! Installing via Chocolatey..."
-            choco install mingw --version=13.2.0 --yes
-            echo "C:\ProgramData\chocolatey\lib\mingw\tools\install\mingw64\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
-        }
+        choco install mingw -y --force --version=13.2.0
+        echo "C:\ProgramData\chocolatey\lib\mingw\tools\install\mingw64\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
 
     - name: Build glitch.exe
       run: |
         g++ --version
-        g++ -O2 -static -o glitch.exe glitch.cpp -lgdi32
+        g++ -O3 -static -o glitch.exe glitch.cpp -lgdi32 -luser32 -lwinmm -lpthread
 
     - name: Verify build
       run: |
@@ -37,7 +28,7 @@ jobs:
             echo "Build successful!"
             echo "File size: $((Get-Item glitch.exe).Length) bytes"
         } else {
-            echo "Build failed!"
+            echo "::error::Build failed!"
             Get-ChildItem
             exit 1
         }
@@ -46,10 +37,12 @@ jobs:
       uses: softprops/action-gh-release@v2
       with:
         tag_name: ${{ github.ref_name }}
-        name: Glitch Effect ${{ github.ref_name }}
+        name: Extreme Glitch ${{ github.ref_name }}
         body: |
-          Desktop glitch effect application
+          Ultimate desktop glitch effect with intense visuals and sound
           - Press ESC to exit
+          - Press S to toggle sound
+          - System-safe: No permanent changes
           - Built automatically from GitHub Actions
         files: glitch.exe
       env:
