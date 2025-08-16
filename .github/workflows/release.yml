@@ -11,7 +11,7 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        arch: [x64]   # 64-bit build only
+        arch: [x86, x64]
 
     steps:
     - name: Checkout repository
@@ -30,10 +30,17 @@ jobs:
       shell: bash
       run: |
         g++ --version
-        g++ -O2 -Wall -Wextra -static -o distortion-${{ matrix.arch }}.exe \
-            malware/distortion1.cpp malware/distortion.res \
-            -lwinmm -luser32 -ldwmapi -lgdi32 -lpsapi -lpthread -mwindows -m${{ matrix.arch}} \
-            -Wno-cast-function-type -Wno-missing-field-initializers
+        if [ "${{ matrix.arch }}" = "x64" ]; then
+          g++ -O2 -Wall -Wextra -static -o distortion-x64.exe \
+              malware/distortion1.cpp malware/distortion.res \
+              -lwinmm -luser32 -ldwmapi -lgdi32 -lpsapi -lpthread -mwindows -m64 \
+              -Wno-cast-function-type -Wno-missing-field-initializers
+        else
+          g++ -O2 -Wall -Wextra -static -o distortion-x86.exe \
+              malware/distortion1.cpp malware/distortion.res \
+              -lwinmm -luser32 -ldwmapi -lgdi32 -lpsapi -lpthread -mwindows -m32 \
+              -Wno-cast-function-type -Wno-missing-field-initializers
+        fi
 
     - name: Verify build
       run: |
@@ -58,6 +65,7 @@ jobs:
           - Built automatically from GitHub Actions
           - Author: WHO-AM-I-404
         files: |
-          distortion-${{ matrix.arch }}.exe
+          distortion-x64.exe
+          distortion-x86.exe
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
