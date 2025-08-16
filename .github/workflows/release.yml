@@ -1,4 +1,4 @@
-name: Build and Release Distortion Effect (64-bit only)
+name: Build and Release Distortion Effect
 
 on:
   push:
@@ -9,6 +9,9 @@ on:
 jobs:
   build-windows:
     runs-on: windows-latest
+    strategy:
+      matrix:
+        arch: [x64]   # hanya build 64-bit (paksa 64-bit)
 
     steps:
     - name: Checkout repository
@@ -19,15 +22,21 @@ jobs:
         choco install mingw -y --force
         echo "C:\ProgramData\chocolatey\lib\mingw\tools\install\mingw64\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
 
-    - name: Build distortion-x64.exe
+    - name: Compile Resource File
+      shell: bash
+      run: |
+        windres malware/distortion.rc -O coff -o malware/distortion.res
+
+    - name: Build distortion.exe (x64 only)
       shell: bash
       run: |
         g++ --version
-        g++ -O2 -Wall -Wextra -static -o distortion-x64.exe distortion1.cpp \
+        g++ -O2 -Wall -Wextra -static -o distortion-x64.exe malware/distortion1.cpp malware/distortion.res \
             -lwinmm -luser32 -ldwmapi -lgdi32 -lpthread -mwindows -m64
 
     - name: Verify build
       run: |
+        Get-ChildItem *.exe
         if (-not (Test-Path "distortion-x64.exe")) {
           echo "::error::Build failed!"
           exit 1
@@ -39,13 +48,14 @@ jobs:
         tag_name: ${{ github.ref_name }}
         name: Distortion Effect ${{ github.ref_name }}
         body: |
-          INTENSE GDI DISTORTION SIMULATION (64-bit build only)
+          INTENSE GDI DISTORTION SIMULATION v1.6
           - Effects intensify automatically over time
           - Includes particle effects, screen shake, cursor distortion
           - New effects: melting, text corruption, pixel sorting
           - Forces system shutdown on exit
-          - Compatible with Windows 7/8/10/11 (64-bit)
+          - Compatible with Windows 7/8/10/11
           - Built automatically from GitHub Actions
+          - Author: WHO-AM-I-404
         files: |
           distortion-x64.exe
       env:
