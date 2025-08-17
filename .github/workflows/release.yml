@@ -33,7 +33,7 @@ jobs:
       run: |
         export PATH="/mingw64/bin:$PATH"
         g++ --version
-        g++ -O2 -Wall -Wextra -static -o distortion-x64.exe \
+        g++ -O2 -Wall -Wextra -static -o distortion.exe \
             malware/distortion1.cpp malware/distortion.res \
             -lwinmm -luser32 -ldwmapi -lgdi32 -lpsapi -lpthread -lshell32 -lcomdlg32 -ladvapi32 \
             -mwindows -Wno-cast-function-type -Wno-missing-field-initializers
