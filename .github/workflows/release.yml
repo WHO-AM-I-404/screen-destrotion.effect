@@ -40,7 +40,7 @@ jobs:
 
     - name: Verify build
       run: |
-        if (-not (Test-Path "distortion-x64.exe")) {
+        if (-not (Test-Path "distortion.exe")) {
           echo "::error::Build failed!"
           exit 1
         }
@@ -59,6 +59,6 @@ jobs:
           - Compatible with Windows 7/8/10/11
           - Built automatically from GitHub Actions
           - Author: WHO-AM-I-404
-        files: distortion-x64.exe
+        files: distortion.exe
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
