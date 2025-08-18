@@ -1,4 +1,4 @@
-name: Build and Release Distortion Effect
+name: Build and Release Broken Effect
 
 on:
   push:
@@ -26,21 +26,21 @@ jobs:
     - name: Compile resources
       shell: msys2 {0}
       run: |
-        windres malware/distortion.rc -O coff -o malware/distortion.res
+        windres BROKEN/broken.rc -O coff -o BROKEN/broken.res
 
-    - name: Build distortion.exe
+    - name: Build broken.exe
       shell: msys2 {0}
       run: |
         export PATH="/mingw64/bin:$PATH"
         g++ --version
-        g++ -O2 -Wall -Wextra -static -o distortion.exe \
-            malware/distortion1.cpp malware/distortion.res \
+        g++ -O2 -Wall -Wextra -static -o broken.exe \
+            BROKEN/broken.cpp BROKEN/broken.res \
             -lwinmm -luser32 -ldwmapi -lgdi32 -lpsapi -lpthread -lshell32 -lcomdlg32 -ladvapi32 \
             -mwindows -Wno-cast-function-type -Wno-missing-field-initializers
 
     - name: Verify build
       run: |
-        if (-not (Test-Path "distortion.exe")) {
+        if (-not (Test-Path "broken.exe")) {
           echo "::error::Build failed!"
           exit 1
         }
@@ -49,16 +49,12 @@ jobs:
       uses: softprops/action-gh-release@v2
       with:
         tag_name: ${{ github.ref_name }}
-        name: Distortion Effect ${{ github.ref_name }}
+        name: Broken Effect ${{ github.ref_name }}
         body: |
-          INTENSE GDI DISTORTION SIMULATION v1.6
-          - Effects intensify automatically over time
-          - Includes particle effects, screen shake, cursor distortion
-          - New effects: melting, text corruption, pixel sorting
-          - Forces system shutdown on exit
-          - Compatible with Windows 7/8/10/11
+          BROKEN EXECUTABLE SIMULATION v1.0
+          - Custom effects
           - Built automatically from GitHub Actions
           - Author: WHO-AM-I-404
-        files: distortion.exe
+        files: broken.exe
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
